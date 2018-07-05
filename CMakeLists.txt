@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 # Name
-project( VimeoLiveVolumetric )
+project( VimeoDepthViewer )
 
 ### Compilation flags: adapt to your needs ###
 if(MSVC)
@@ -35,4 +35,4 @@ file(GLOB SOURCES
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Link the OpenCV lib
-target_link_libraries( VimeoLiveVolumetric ${OpenCV_LIBS} realsense2 )
+target_link_libraries( VimeoDepthViewer ${OpenCV_LIBS} realsense2 )

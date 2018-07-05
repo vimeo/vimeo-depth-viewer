@@ -101,7 +101,7 @@ int main(int argc, char * argv[]) try {
     rs2::align align(align_to);
 
     // openCV window
-    const auto window_name = "Vimeo Live - Depth Stream";
+    const auto window_name = "Vimeo - Depth Viewer";
     namedWindow(window_name, WINDOW_AUTOSIZE);
 
 
