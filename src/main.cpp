@@ -8,10 +8,18 @@
 #include <thread>
 #include <atomic>
 #include <queue>
+#include <sstream>
+#include <iostream>
+#include <fstream>
+#include <algorithm>
+#include <cstring>
 
 using namespace cv;
 
-#define SCALE_FACTOR 1
+float get_depth_scale(rs2::device dev);
+rs2_stream find_stream_to_align(const std::vector<rs2::stream_profile>& streams);
+bool profile_changed(const std::vector<rs2::stream_profile>& current, const std::vector<rs2::stream_profile>& prev);
+
 
 /*
 * Class for enqueuing and dequeuing cv::Mats efficiently
@@ -72,119 +80,96 @@ void make_depth_histogram(const Mat &depth, Mat &normalized_depth, int coloringM
 
 int main(int argc, char * argv[]) try {
 
-    //Create a depth cleaner instance
-    rgbd::DepthCleaner* depthc = new rgbd::DepthCleaner(CV_16U, 7, rgbd::DepthCleaner::DEPTH_CLEANER_NIL);
-
-    // A librealsense class for mapping raw depth into RGB (pretty visuals, yay)
-    rs2::colorizer color_map;
-
-    // Declare RealSense pipeline, encapsulating the actual device and sensors
+    // Create a pipeline to easily configure and start the camera
     rs2::pipeline pipe;
+    //Calling pipeline's start() without any additional parameters will start the first device
+    // with its default streams.
+    //The start function returns the pipeline profile which the pipeline used to start the device
+    rs2::pipeline_profile profile = pipe.start();
 
-    //Create a configuration for configuring the pipeline with a non default profile
-    rs2::config cfg;
+    // Each depth camera might have different units for depth pixels, so we get it here
+    // Using the pipeline's profile, we can retrieve the device that the pipeline uses
+    float depth_scale = get_depth_scale(profile.get_device());
 
-    //Add desired streams to configuration
-    cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16, 30);
+    //Pipeline could choose a device that does not have a color stream
+    //If there is no color stream, choose to align depth to another stream
+    rs2_stream align_to = find_stream_to_align(profile.get_streams());
 
-    // Start streaming with default recommended configuration
-    pipe.start(cfg);
+    // Create a rs2::align object.
+    // rs2::align allows us to perform alignment of depth frames to others frames
+    //The "align_to" is the stream type to which we plan to align depth frames.
+    rs2::align align(align_to);
 
     // openCV window
-    const auto window_name_source = "Source Depth";
-    namedWindow(window_name_source, WINDOW_AUTOSIZE);
+    const auto window_name = "Vimeo Live - Depth Stream";
+    namedWindow(window_name, WINDOW_AUTOSIZE);
 
-    const auto window_name_filter = "Filtered Depth";
-    namedWindow(window_name_filter, WINDOW_AUTOSIZE);
 
     // Atomic boolean to allow thread safe way to stop the thread
-    std::atomic_bool stopped(false);
-
-    // Declaring two concurrent queues that will be used to push and pop frames from different threads
-    std::queue<QueuedMat> filteredQueue;
-    std::queue<QueuedMat> originalQueue;
+    std::atomic_bool stopped(true);
 
     // The threaded processing thread function
     std::thread processing_thread([&]() {
         while (!stopped){
 
-            rs2::frameset data = pipe.wait_for_frames(); // Wait for next set of frames from the camera
-            rs2::frame depth_frame = data.get_depth_frame(); //Take the depth frame from the frameset
-            if (!depth_frame) // Should not happen but if the pipeline is configured differently
-                return;       //  it might not provide depth and we don't want to crash
-
-            //Save a reference
-            rs2::frame filtered = depth_frame;
-
-            // Query frame size (width and height)
-            const int w = depth_frame.as<rs2::video_frame>().get_width();
-            const int h = depth_frame.as<rs2::video_frame>().get_height();
-
-            //Create queued mat containers
-            QueuedMat depthQueueMat;
-            QueuedMat cleanDepthQueueMat;
-
-            // Create an openCV matrix from the raw depth (CV_16U holds a matrix of 16bit unsigned ints)
-            Mat rawDepthMat(Size(w, h), CV_16U, (void*)depth_frame.get_data());
-
-            // Create an openCV matrix for the DepthCleaner instance to write the output to
-            Mat cleanedDepth(Size(w, h), CV_16U);
-
-            //Run the RGBD depth cleaner instance
-            depthc->operator()(rawDepthMat, cleanedDepth);
-
-            const unsigned char noDepth = 0; // change to 255, if values no depth uses max value
-            Mat temp, temp2;
-
-            // Downsize for performance, use a smaller version of depth image (defined in the SCALE_FACTOR macro)
-            Mat small_depthf;
-            resize(cleanedDepth, small_depthf, Size(), SCALE_FACTOR, SCALE_FACTOR);
-
-            // Inpaint only the masked "unknown" pixels
-            inpaint(small_depthf, (small_depthf == noDepth), temp, 5.0, INPAINT_TELEA);
-
-            // Upscale to original size and replace inpainted regions in original depth image
-            resize(temp, temp2, cleanedDepth.size());
-            temp2.copyTo(cleanedDepth, (cleanedDepth == noDepth));  // add to the original signal
-
-            // Use the copy constructor to copy the cleaned mat if the isDepthCleaning is true
-            cleanDepthQueueMat.img = cleanedDepth;
-
-            //Use the copy constructor to fill the original depth coming in from the sensr(i.e visualized in RGB 8bit ints)
-            depthQueueMat.img = rawDepthMat;
-
-            //Push the mats to the queue
-            originalQueue.push(depthQueueMat);
-            filteredQueue.push(cleanDepthQueueMat);
         }
     });
 
-    Mat filteredDequeuedMat(Size(1280, 720), CV_16UC1);
-    Mat originalDequeuedMat(Size(1280, 720), CV_8UC3);
+    Mat depthDequeuedMat(Size(640, 480), CV_8UC3);
 
     //Main thread function
-    while (waitKey(1) < 0 && cvGetWindowHandle(window_name_source) && cvGetWindowHandle(window_name_filter)){
+    while (waitKey(1) < 0 && cvGetWindowHandle(window_name)){
 
-        //If the frame queue is not empty pull a frame out and clean the queue
-        while(!originalQueue.empty()){
-            originalQueue.front().img.copyTo(originalDequeuedMat);
-            originalQueue.pop();
+        // Using the align object, we block the application until a frameset is available
+        rs2::frameset frameset = pipe.wait_for_frames();
+
+        // rs2::pipeline::wait_for_frames() can replace the device it uses in case of device error or disconnection.
+        // Since rs2::align is aligning depth to some other stream, we need to make sure that the stream was not changed
+        //  after the call to wait_for_frames();
+        if (profile_changed(pipe.get_active_profile().get_streams(), profile.get_streams()))
+        {
+            //If the profile was changed, update the align object, and also get the new device's depth scale
+            profile = pipe.get_active_profile();
+            align_to = find_stream_to_align(profile.get_streams());
+            align = rs2::align(align_to);
+            depth_scale = get_depth_scale(profile.get_device());
         }
 
+        //Get processed aligned frame
+        auto processed = align.process(frameset);
 
-        while(!filteredQueue.empty()){
-            filteredQueue.front().img.copyTo(filteredDequeuedMat);
-            filteredQueue.pop();
+        // Trying to get both other and aligned depth frames
+        rs2::video_frame other_frame = processed.first(align_to);
+        rs2::depth_frame aligned_depth_frame = processed.get_depth_frame();
+
+        //If one of them is unavailable, continue iteration
+        if (!aligned_depth_frame || !other_frame)
+        {
+            continue;
         }
 
-        Mat coloredCleanedDepth;
-        Mat coloredOriginalDepth;
+        // Query frame size (width and height)
+        const int w = aligned_depth_frame.as<rs2::depth_frame>().get_width();
+        const int h = aligned_depth_frame.as<rs2::depth_frame>().get_height();
 
-        make_depth_histogram(filteredDequeuedMat, coloredCleanedDepth, COLORMAP_JET);
-        make_depth_histogram(originalDequeuedMat, coloredOriginalDepth, COLORMAP_JET);
+        // std::cout << "Width is: " << other_frame.as<rs2::video_frame>().get_width() << "|" << " Height is: " << h << std::endl;
 
-        imshow(window_name_filter, coloredCleanedDepth);
-        imshow(window_name_source, coloredOriginalDepth);
+        //Create queued mat containers
+        QueuedMat depthQueueMat;
+
+        Mat rawColorMat(Size(w,h), CV_8UC3, (void*)other_frame.get_data());
+
+        // Create an openCV matrix from the raw depth (CV_16U holds a matrix of 16bit unsigned ints)
+        Mat rawDepthMat(Size(w, h), CV_16U, (void*)aligned_depth_frame.get_data());
+
+        Mat coloredDepth;
+
+        make_depth_histogram(rawDepthMat, coloredDepth, COLORMAP_JET);
+
+        Mat res;
+        cvtColor(rawColorMat,rawColorMat,COLOR_BGR2RGB);
+        vconcat(rawColorMat, coloredDepth, res);
+        imshow(window_name, res);
     }
 
     // Signal the processing thread to stop, and join
@@ -200,4 +185,68 @@ catch (const rs2::error & e){
 catch (const std::exception& e){
     std::cerr << e.what() << std::endl;
     return EXIT_FAILURE;
+}
+
+float get_depth_scale(rs2::device dev)
+{
+    // Go over the device's sensors
+    for (rs2::sensor& sensor : dev.query_sensors())
+    {
+        // Check if the sensor if a depth sensor
+        if (rs2::depth_sensor dpt = sensor.as<rs2::depth_sensor>())
+        {
+            return dpt.get_depth_scale();
+        }
+    }
+    throw std::runtime_error("Device does not have a depth sensor");
+}
+
+rs2_stream find_stream_to_align(const std::vector<rs2::stream_profile>& streams)
+{
+    //Given a vector of streams, we try to find a depth stream and another stream to align depth with.
+    //We prioritize color streams to make the view look better.
+    //If color is not available, we take another stream that (other than depth)
+    rs2_stream align_to = RS2_STREAM_ANY;
+    bool depth_stream_found = false;
+    bool color_stream_found = false;
+    for (rs2::stream_profile sp : streams)
+    {
+        rs2_stream profile_stream = sp.stream_type();
+        if (profile_stream != RS2_STREAM_DEPTH)
+        {
+            if (!color_stream_found)         //Prefer color
+                align_to = profile_stream;
+
+            if (profile_stream == RS2_STREAM_COLOR)
+            {
+                color_stream_found = true;
+            }
+        }
+        else
+        {
+            depth_stream_found = true;
+        }
+    }
+
+    if(!depth_stream_found)
+        throw std::runtime_error("No Depth stream available");
+
+    if (align_to == RS2_STREAM_ANY)
+        throw std::runtime_error("No stream found to align with Depth");
+
+    return align_to;
+}
+
+bool profile_changed(const std::vector<rs2::stream_profile>& current, const std::vector<rs2::stream_profile>& prev)
+{
+    for (auto&& sp : prev)
+    {
+        //If previous profile is in current (maybe just added another)
+        auto itr = std::find_if(std::begin(current), std::end(current), [&sp](const rs2::stream_profile& current_sp) { return sp.unique_id() == current_sp.unique_id(); });
+        if (itr == std::end(current)) //If it previous stream wasn't found in current
+        {
+            return true;
+        }
+    }
+    return false;
 }

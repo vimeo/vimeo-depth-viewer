@@ -35,4 +35,4 @@ file(GLOB SOURCES
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Link the OpenCV lib
-target_link_libraries( DepthCleaner ${OpenCV_LIBS} realsense2 )
+target_link_libraries( VimeoLiveVolumetric ${OpenCV_LIBS} realsense2 )
