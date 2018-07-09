@@ -19,7 +19,7 @@ using namespace cv;
 float get_depth_scale(rs2::device dev);
 rs2_stream find_stream_to_align(const std::vector<rs2::stream_profile>& streams);
 bool profile_changed(const std::vector<rs2::stream_profile>& current, const std::vector<rs2::stream_profile>& prev);
-
+void remove_background(rs2::video_frame& other, const rs2::depth_frame& depth_frame, float depth_scale, float clipping_dist);
 
 /*
 * Class for enqueuing and dequeuing cv::Mats efficiently
@@ -148,14 +148,14 @@ int main(int argc, char * argv[]) try {
             continue;
         }
 
+        // Define a variable for controlling the distance to clip
+        float depth_clipping_distance = 0.5f;
+
+        remove_background(other_frame, aligned_depth_frame, depth_scale, depth_clipping_distance);
+
         // Query frame size (width and height)
         const int w = aligned_depth_frame.as<rs2::depth_frame>().get_width();
         const int h = aligned_depth_frame.as<rs2::depth_frame>().get_height();
-
-        // std::cout << "Width is: " << other_frame.as<rs2::video_frame>().get_width() << "|" << " Height is: " << h << std::endl;
-
-        //Create queued mat containers
-        QueuedMat depthQueueMat;
 
         Mat rawColorMat(Size(w,h), CV_8UC3, (void*)other_frame.get_data());
 
@@ -185,6 +185,37 @@ catch (const rs2::error & e){
 catch (const std::exception& e){
     std::cerr << e.what() << std::endl;
     return EXIT_FAILURE;
+}
+
+void remove_background(rs2::video_frame& other_frame, const rs2::depth_frame& depth_frame, float depth_scale, float clipping_dist)
+{
+    const uint16_t* p_depth_frame = reinterpret_cast<const uint16_t*>(depth_frame.get_data());
+    uint8_t* p_other_frame = reinterpret_cast<uint8_t*>(const_cast<void*>(other_frame.get_data()));
+
+    int width = other_frame.get_width();
+    int height = other_frame.get_height();
+    int other_bpp = other_frame.get_bytes_per_pixel();
+
+    #pragma omp parallel for schedule(dynamic) //Using OpenMP to try to parallelise the loop
+    for (int y = 0; y < height; y++)
+    {
+        auto depth_pixel_index = y * width;
+        for (int x = 0; x < width; x++, ++depth_pixel_index)
+        {
+            // Get the depth value of the current pixel
+            auto pixels_distance = depth_scale * p_depth_frame[depth_pixel_index];
+
+            // Check if the depth value is invalid (<=0) or greater than the threashold
+            if (pixels_distance <= 0.f || pixels_distance > clipping_dist)
+            {
+                // Calculate the offset in other frame's buffer to current pixel
+                auto offset = depth_pixel_index * other_bpp;
+
+                // Set pixel to "background" color (0x999999)
+                std::memset(&p_other_frame[offset], 0x99, other_bpp);
+            }
+        }
+    }
 }
 
 float get_depth_scale(rs2::device dev)
