@@ -25,7 +25,7 @@ MainWindow::MainWindow(const Vector2i & size, const string & caption)
     _views->setLayout(new GroupLayout());
 
 
-    _btnStream = _views->add<Button>("Stream");
+    _btnStream = _views->add<Button>("");
     _btnStream->setIcon(ENTYPO_ICON_CONTROLLER_PLAY);
     // _btnStream->setBackgroundColor(Color(26, 183, 234, 10));
     _btnStream->setFlags(Button::ToggleButton);
@@ -73,7 +73,7 @@ void MainWindow::onToggleStream(bool on)
     {
         std::cout << "[Vimeo - Depth Viewer] Opening stream 🎥" << std::endl;
         _streamWindow = new VideoWindow(this,"Stream");
-        _streamWindow->setPosition(Vector2i(_views->size()(0) + 100, 15));
+        _streamWindow->setPosition(Vector2i(15, 90));
         _btnStream->setIcon(ENTYPO_ICON_CONTROLLER_STOP);
         _streamWindow->setSize(Vector2i(640 / 2, 960 / 2));
         performLayout();

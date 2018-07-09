@@ -66,6 +66,7 @@ private:
 
     nanogui::Button *_btnLogo;
     nanogui::Button *_btnStream;
+    nanogui::Button *_btnConfig;
 
     VideoWindow *_streamWindow;
 
