@@ -2,6 +2,12 @@
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 #include <opencv2/opencv.hpp>   // Include OpenCV API
 #include <opencv2/rgbd.hpp>     // OpenCV RGBD Contrib package
+#include <nanogui/common.h>     // NanoGUI
+#include <nanogui/object.h>     // NanoGUI
+#include <Eigen/Core>
+
+//App components
+#include "MainWindow.h"
 
 // STD
 #include <string>
@@ -26,23 +32,23 @@ void remove_background(rs2::video_frame& other, const rs2::depth_frame& depth_fr
 * Thanks to this awesome post by PKLab
 * http://pklab.net/index.php?id=394&lang=EN
 */
-class QueuedMat{
-public:
-
-    Mat img; // Standard cv::Mat
-
-    QueuedMat(){}; // Default constructor
-
-    // Destructor (called by queue::pop)
-    ~QueuedMat(){
-        img.release();
-    };
-
-    // Copy constructor (called by queue::push)
-    QueuedMat(const QueuedMat& src){
-        src.img.copyTo(img);
-    };
-};
+// class QueuedMat{
+// public:
+//
+//     Mat img; // Standard cv::Mat
+//
+//     QueuedMat(){}; // Default constructor
+//
+//     // Destructor (called by queue::pop)
+//     ~QueuedMat(){
+//         img.release();
+//     };
+//
+//     // Copy constructor (called by queue::push)
+//     QueuedMat(const QueuedMat& src){
+//         src.img.copyTo(img);
+//     };
+// };
 
 /*
 * Awesome method for visualizing the 16bit unsigned depth data using a histogram, slighly modified (:
@@ -80,101 +86,114 @@ void make_depth_histogram(const Mat &depth, Mat &normalized_depth, int coloringM
 
 int main(int argc, char * argv[]) try {
 
-    // Create a pipeline to easily configure and start the camera
-    rs2::pipeline pipe;
-    //Calling pipeline's start() without any additional parameters will start the first device
-    // with its default streams.
-    //The start function returns the pipeline profile which the pipeline used to start the device
-    rs2::pipeline_profile profile = pipe.start();
+      // initialize GUI
+      nanogui::init();
+      {
+          nanogui::ref<MainWindow> guiMain = new MainWindow(Eigen::Vector2i(1280, 720), "Vimeo - Depth Viewer");
+          guiMain->drawAll();
+          guiMain->setVisible(true);
 
-    // Each depth camera might have different units for depth pixels, so we get it here
-    // Using the pipeline's profile, we can retrieve the device that the pipeline uses
-    float depth_scale = get_depth_scale(profile.get_device());
+          /*
+          * Print instructions into the console
+          */
+          std::cout << "[Vimeo - Depth Viewer] GUI Initialized 💪🏻" << std::endl;
+          std::cout << "  - Use escape key to quit" << std::endl;
+          nanogui::mainloop(30);
+      }
 
-    //Pipeline could choose a device that does not have a color stream
-    //If there is no color stream, choose to align depth to another stream
-    rs2_stream align_to = find_stream_to_align(profile.get_streams());
-
-    // Create a rs2::align object.
-    // rs2::align allows us to perform alignment of depth frames to others frames
-    //The "align_to" is the stream type to which we plan to align depth frames.
-    rs2::align align(align_to);
-
-    // openCV window
-    const auto window_name = "Vimeo - Depth Viewer";
-    namedWindow(window_name, WINDOW_AUTOSIZE);
-
-
-    // Atomic boolean to allow thread safe way to stop the thread
-    std::atomic_bool stopped(true);
-
-    // The threaded processing thread function
-    std::thread processing_thread([&]() {
-        while (!stopped){
-
-        }
-    });
-
-    Mat depthDequeuedMat(Size(640, 480), CV_8UC3);
-
-    //Main thread function
-    while (waitKey(1) < 0 && cvGetWindowHandle(window_name)){
-
-        // Using the align object, we block the application until a frameset is available
-        rs2::frameset frameset = pipe.wait_for_frames();
-
-        // rs2::pipeline::wait_for_frames() can replace the device it uses in case of device error or disconnection.
-        // Since rs2::align is aligning depth to some other stream, we need to make sure that the stream was not changed
-        //  after the call to wait_for_frames();
-        if (profile_changed(pipe.get_active_profile().get_streams(), profile.get_streams()))
-        {
-            //If the profile was changed, update the align object, and also get the new device's depth scale
-            profile = pipe.get_active_profile();
-            align_to = find_stream_to_align(profile.get_streams());
-            align = rs2::align(align_to);
-            depth_scale = get_depth_scale(profile.get_device());
-        }
-
-        //Get processed aligned frame
-        auto processed = align.process(frameset);
-
-        // Trying to get both other and aligned depth frames
-        rs2::video_frame other_frame = processed.first(align_to);
-        rs2::depth_frame aligned_depth_frame = processed.get_depth_frame();
-
-        //If one of them is unavailable, continue iteration
-        if (!aligned_depth_frame || !other_frame)
-        {
-            continue;
-        }
-
-        // Define a variable for controlling the distance to clip
-        float depth_clipping_distance = 0.5f;
-
-        remove_background(other_frame, aligned_depth_frame, depth_scale, depth_clipping_distance);
-
-        // Query frame size (width and height)
-        const int w = aligned_depth_frame.as<rs2::depth_frame>().get_width();
-        const int h = aligned_depth_frame.as<rs2::depth_frame>().get_height();
-
-        Mat rawColorMat(Size(w,h), CV_8UC3, (void*)other_frame.get_data());
-
-        // Create an openCV matrix from the raw depth (CV_16U holds a matrix of 16bit unsigned ints)
-        Mat rawDepthMat(Size(w, h), CV_16U, (void*)aligned_depth_frame.get_data());
-
-        Mat coloredDepth;
-
-        make_depth_histogram(rawDepthMat, coloredDepth, COLORMAP_JET);
-
-        Mat res;
-        cvtColor(rawColorMat,rawColorMat,COLOR_BGR2RGB);
-        vconcat(rawColorMat, coloredDepth, res);
-        imshow(window_name, res);
-    }
-
-    // Signal the processing thread to stop, and join
-    stopped = true;
-    processing_thread.join();
+      nanogui::shutdown();
+      std::cout << "[Vimeo - Depth Viewer] Goodbye 👋🏻" << std::endl;
+    // // Create a pipeline to easily configure and start the camera
+    // rs2::pipeline pipe;
+    // //Calling pipeline's start() without any additional parameters will start the first device
+    // // with its default streams.
+    // //The start function returns the pipeline profile which the pipeline used to start the device
+    // rs2::pipeline_profile profile = pipe.start();
+    //
+    // // Each depth camera might have different units for depth pixels, so we get it here
+    // // Using the pipeline's profile, we can retrieve the device that the pipeline uses
+    // float depth_scale = get_depth_scale(profile.get_device());
+    //
+    // //Pipeline could choose a device that does not have a color stream
+    // //If there is no color stream, choose to align depth to another stream
+    // rs2_stream align_to = find_stream_to_align(profile.get_streams());
+    //
+    // // Create a rs2::align object.
+    // // rs2::align allows us to perform alignment of depth frames to others frames
+    // //The "align_to" is the stream type to which we plan to align depth frames.
+    // rs2::align align(align_to);
+    //
+    // // openCV window
+    // const auto window_name = "Vimeo - Depth Viewer";
+    // namedWindow(window_name, WINDOW_AUTOSIZE);
+    //
+    //
+    // // Atomic boolean to allow thread safe way to stop the thread
+    // std::atomic_bool stopped(true);
+    //
+    // // The threaded processing thread function
+    // std::thread processing_thread([&]() {
+    //     while (!stopped){
+    //
+    //     }
+    // });
+    //
+    // Mat depthDequeuedMat(Size(640, 480), CV_8UC3);
+    //
+    // //Main thread function
+    // while (waitKey(1) < 0 && cvGetWindowHandle(window_name)){
+    //
+        // // Using the align object, we block the application until a frameset is available
+        // rs2::frameset frameset = pipe.wait_for_frames();
+        //
+        // // rs2::pipeline::wait_for_frames() can replace the device it uses in case of device error or disconnection.
+        // // Since rs2::align is aligning depth to some other stream, we need to make sure that the stream was not changed
+        // //  after the call to wait_for_frames();
+        // if (profile_changed(pipe.get_active_profile().get_streams(), profile.get_streams()))
+        // {
+        //     //If the profile was changed, update the align object, and also get the new device's depth scale
+        //     profile = pipe.get_active_profile();
+        //     align_to = find_stream_to_align(profile.get_streams());
+        //     align = rs2::align(align_to);
+        //     depth_scale = get_depth_scale(profile.get_device());
+        // }
+        //
+        // //Get processed aligned frame
+        // auto processed = align.process(frameset);
+        //
+        // // Trying to get both other and aligned depth frames
+        // rs2::video_frame other_frame = processed.first(align_to);
+        // rs2::depth_frame aligned_depth_frame = processed.get_depth_frame();
+        //
+        // //If one of them is unavailable, continue iteration
+        // if (!aligned_depth_frame || !other_frame)
+        // {
+        //     continue;
+        // }
+    //
+    //     // Define a variable for controlling the distance to clip
+    //     float depth_clipping_distance = 0.5f;
+    //
+    //     remove_background(other_frame, aligned_depth_frame, depth_scale, depth_clipping_distance);
+    //
+    //     // Query frame size (width and height)
+    //     const int w = aligned_depth_frame.as<rs2::depth_frame>().get_width();
+    //     const int h = aligned_depth_frame.as<rs2::depth_frame>().get_height();
+    //
+    //     Mat rawColorMat(Size(w,h), CV_8UC3, (void*)other_frame.get_data());
+    //
+    //     // Create an openCV matrix from the raw depth (CV_16U holds a matrix of 16bit unsigned ints)
+    //     Mat rawDepthMat(Size(w, h), CV_16U, (void*)aligned_depth_frame.get_data());
+    //
+    //     Mat coloredDepth;
+    //
+    //     make_depth_histogram(rawDepthMat, coloredDepth, COLORMAP_JET);
+    //
+    //     Mat res;
+    //     cvtColor(rawColorMat,rawColorMat,COLOR_BGR2RGB);
+    //     vconcat(rawColorMat, coloredDepth, res);
+    //     imshow(window_name, res);
+    // }
 
     return EXIT_SUCCESS;
 }
@@ -212,7 +231,7 @@ void remove_background(rs2::video_frame& other_frame, const rs2::depth_frame& de
                 auto offset = depth_pixel_index * other_bpp;
 
                 // Set pixel to "background" color (0x999999)
-                std::memset(&p_other_frame[offset], 0x99, other_bpp);
+                std::memset(&p_other_frame[offset], 0x00, other_bpp);
             }
         }
     }
