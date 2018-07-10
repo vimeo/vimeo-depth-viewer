@@ -57,7 +57,7 @@ void MainWindow::onToggleClipping(bool on)
 {
   if(on){
     clippingPanel = new Window(this, "Clipping");
-    clippingPanel->setPosition(Vector2i(350, 90));
+    clippingPanel->setPosition(Vector2i(380, 90));
     clippingPanel->setLayout(new GroupLayout());
 
     // Disable/enable depth clipping
@@ -109,7 +109,7 @@ void MainWindow::onToggleStream(bool on)
         _streamWindow = new VideoWindow(this,"Stream");
         _streamWindow->setPosition(Vector2i(15, 90));
         _btnStream->setIcon(ENTYPO_ICON_CONTROLLER_STOP);
-        _streamWindow->setSize(Vector2i(640, 960));
+        _streamWindow->setSize(Vector2i(640/2, 960/2));
         performLayout();
         resizeEvent(this->size());
     }

@@ -143,17 +143,8 @@ void VideoView::drawGL()
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, textures[1]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frameWidth, frameHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, depth_frame.get_data());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, depthFrameWidth, depthFrameHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, depth_frame.get_data());
     glGenerateMipmap(GL_TEXTURE_2D);
-
-    // calculate scale factor
-    float viewer_ratio = (float)this->width() / (float)this->height();
-
-    // video frames always have W/H ratio > 1.0
-    float frame_ratio = (float)frameWidth * 2 / (float)frameHeight * 2;
-    float ratio_diff = frame_ratio - viewer_ratio;
-
-
 
     _shader.bind();
 

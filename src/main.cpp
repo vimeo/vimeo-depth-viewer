@@ -6,7 +6,6 @@
 
 //App components
 #include "MainWindow.h"
-#include "MonitorWindow.h"
 
 // STD
 #include <string>
@@ -24,12 +23,10 @@ int main(int argc, char * argv[]) try {
       // initialize GUI
       nanogui::init();
       {
-          nanogui::ref<MainWindow> guiMain = new MainWindow(Eigen::Vector2i(650, 650), "Vimeo - Depth Viewer");
-          // nanogui::ref<MonitorWindow> monitor = new MonitorWindow(Eigen::Vector2i(640, 960), "Vimeo - Monitor");
+          //GUI view
+          nanogui::ref<MainWindow> guiMain = new MainWindow(Eigen::Vector2i(700, 700), "Vimeo - Depth Viewer");
           guiMain->drawAll();
           guiMain->setVisible(true);
-          // monitor->drawAll();
-          // monitor->setVisible(true);
 
           /*
           * Print instructions into the console
