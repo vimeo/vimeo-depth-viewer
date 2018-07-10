@@ -8,6 +8,7 @@ MainWindow::MainWindow(const Vector2i & size, const string & caption)
         ,isClipping{ false }
         ,depth_clipping_distance{ 1.0f }{
 
+    std::cout.setf(std::ios::fixed);
 
     _logo = new Window(this, "");
     _logo->setPosition(Vector2i(15, 15));
@@ -37,9 +38,8 @@ MainWindow::MainWindow(const Vector2i & size, const string & caption)
     _btnClipping = _views->add<Button>("");
     _btnClipping->setIcon(ENTYPO_ICON_SCISSORS);
     _btnClipping->setFlags(Button::ToggleButton);
-    _btnClipping->setTooltip("Start streaming RGB and depth from a connected RealSense sensor 🎥");
+    _btnClipping->setTooltip("Open depth clipping widget");
     _btnClipping->setChangeCallback([&](bool state) { onToggleClipping(state); });
-
 
     //Placeholders for the window elements
     _streamWindow = nullptr;
@@ -50,10 +50,6 @@ MainWindow::MainWindow(const Vector2i & size, const string & caption)
     if(ctx.query_devices().size() > 0){
       std::cout << "[Vimeo - Depth Viewer] Found " << ctx.query_devices().size() << " RealSense sensors connected." << std::endl;
     }
-
-}
-
-void MainWindow::onToggleSettings(bool on){
 
 }
 
@@ -82,9 +78,9 @@ void MainWindow::onToggleClipping(bool on)
     TextBox *textBox = new TextBox(alignmentWidget);
     textBox->setFixedSize(Vector2i(60, 25));
     textBox->setValue("0.5");
-    slider->setCallback([this](float value) {
+    slider->setCallback([this, textBox](float value) {
         depth_clipping_distance = value * 15.0f;
-        // textBox->setValue(std::to_string((float) (value * 15.0f)));
+        textBox->setValue(std::to_string((int)depth_clipping_distance));
     });
     textBox->setFixedSize(Vector2i(60,25));
     textBox->setFontSize(20);
@@ -113,7 +109,7 @@ void MainWindow::onToggleStream(bool on)
         _streamWindow = new VideoWindow(this,"Stream");
         _streamWindow->setPosition(Vector2i(15, 90));
         _btnStream->setIcon(ENTYPO_ICON_CONTROLLER_STOP);
-        _streamWindow->setSize(Vector2i(640 / 2, 960 / 2));
+        _streamWindow->setSize(Vector2i(640, 960));
         performLayout();
         resizeEvent(this->size());
     }

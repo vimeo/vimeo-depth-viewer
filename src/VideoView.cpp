@@ -18,11 +18,10 @@ VideoView::VideoView(Widget * parent)
         #version 330 core
         in vec2 position;
         in vec2 coord;
-        uniform vec2 scaleFactor;
         out vec2 texCoord;
         void main()
         {
-            gl_Position = vec4(position.x*scaleFactor.x, position.y*scaleFactor.y, 0.0, 1.0);
+            gl_Position = vec4(position.x, position.y, 0.0, 1.0);
             texCoord = coord;
         })" }
     , _glslFragment{ R"(
@@ -131,6 +130,11 @@ void VideoView::drawGL()
     rs2::video_frame depth_frame = _depthQueue.wait_for_frame().as<rs2::video_frame>();
     int frameWidth = color_frame.get_width();
     int frameHeight = color_frame.get_height();
+    int depthFrameWidth = depth_frame.get_width();
+    int depthFrameHeight = depth_frame.get_height();
+
+    // std::cout << "Color frame height is: " << frameHeight << " | " << "Color frame width is: " << frameWidth << std::endl;
+    // std::cout << "Depth frame height is: " << depthFrameHeight << " | " << "Depth frame width is: " << depthFrameWidth << std::endl;
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, textures[0]);
@@ -146,17 +150,12 @@ void VideoView::drawGL()
     float viewer_ratio = (float)this->width() / (float)this->height();
 
     // video frames always have W/H ratio > 1.0
-    float frame_ratio = (float)frameWidth / (float)frameHeight;
+    float frame_ratio = (float)frameWidth * 2 / (float)frameHeight * 2;
     float ratio_diff = frame_ratio - viewer_ratio;
 
-    Vector2f scaleFactor = Vector2f::Ones();
-
-    scaleFactor(1) = frame_ratio;
-    // scaleFactor(0) = (frame_ratio * height()) / width();
 
 
     _shader.bind();
-    _shader.setUniform("scaleFactor", scaleFactor);
 
     glEnable(GL_DEPTH_TEST);
     // Draw 2 triangles starting at index 0

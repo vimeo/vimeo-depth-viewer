@@ -12,7 +12,7 @@ using nanogui::Alignment;
 VideoWindow::VideoWindow(Widget * parent, const string & title)
     : Window(parent, title)
 {
-    setLayout(new BoxLayout(Orientation::Vertical, Alignment::Middle));
+    setLayout(new nanogui::GroupLayout());
     _videoview = new VideoView(this);
     _videoview->setBackgroundColor(theme()->mWindowFillFocused);
     requestFocus();

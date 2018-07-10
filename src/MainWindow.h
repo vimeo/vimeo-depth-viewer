@@ -9,6 +9,7 @@
 #include <atomic>
 #include <sstream>
 #include <cmath>
+#include <iomanip>
 
 
 #include <GLFW/glfw3.h>
@@ -63,8 +64,9 @@ private:
     float depth_clipping_distance;
 
     bool isClipping;
-    nanogui::Window *clippingPanel;
 
+    //Window objects
+    nanogui::Window *clippingPanel;
     nanogui::Window *_logo;
     nanogui::Window *_views;
     nanogui::Window *_edit;
@@ -72,7 +74,6 @@ private:
     nanogui::Button *_btnLogo;
     nanogui::Button *_btnStream;
     nanogui::Button *_btnClipping;
-    nanogui::Button *_btnConfig;
 
     VideoWindow *_streamWindow;
 
