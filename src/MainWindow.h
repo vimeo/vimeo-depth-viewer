@@ -26,6 +26,8 @@
 #include <nanogui/checkbox.h>
 #include <nanogui/messagedialog.h>
 #include <nanogui/entypo.h>
+#include <nanogui/slider.h>
+#include <nanogui/textbox.h>
 
 // Realsense
 #include <librealsense2/rs.hpp>
@@ -42,6 +44,8 @@ class MainWindow : public nanogui::Screen
 public:
     MainWindow(const Eigen::Vector2i & size, const std::string & caption);
     void onToggleStream(bool on);
+    void onToggleClipping(bool on);
+    void onToggleSettings(bool on);
     bool keyboardEvent(int key, int scancode, int action, int modifiers) override;
     bool resizeEvent(const Eigen::Vector2i & size) override;
     void draw(NVGcontext *ctx) override;
@@ -53,19 +57,21 @@ protected:
     bool profile_changed(const std::vector<rs2::stream_profile>& current, const std::vector<rs2::stream_profile>& prev);
     rs2_stream find_stream_to_align(const std::vector<rs2::stream_profile>& streams);
     float get_depth_scale(rs2::device dev);
+    void remove_background(rs2::video_frame& other_frame, const rs2::depth_frame& depth_frame, float depth_scale, float clipping_dist);
 
 private:
-    bool isDepthCleaning;
+    float depth_clipping_distance;
+
+    bool isClipping;
+    nanogui::Window *clippingPanel;
 
     nanogui::Window *_logo;
     nanogui::Window *_views;
     nanogui::Window *_edit;
 
-    nanogui::CheckBox *_depthCleaning;
-    nanogui::CheckBox *_depthInpainting;
-
     nanogui::Button *_btnLogo;
     nanogui::Button *_btnStream;
+    nanogui::Button *_btnClipping;
     nanogui::Button *_btnConfig;
 
     VideoWindow *_streamWindow;

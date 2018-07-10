@@ -5,7 +5,8 @@ MainWindow::MainWindow(const Vector2i & size, const string & caption)
         , _isVideoStarted{ false }
         , _colorRatio{ 16.0f / 9.0f }
         , _depthRatio{ 16.0f / 9.0f }
-        ,isDepthCleaning{ false }{
+        ,isClipping{ false }
+        ,depth_clipping_distance{ 1.0f }{
 
 
     _logo = new Window(this, "");
@@ -22,34 +23,26 @@ MainWindow::MainWindow(const Vector2i & size, const string & caption)
     // Create a new window to hold open/close stream buttons
     _views = new Window(this, "");
     _views->setPosition(Vector2i(90, 15));
-    _views->setLayout(new GroupLayout());
+    _views->setLayout(new BoxLayout(Orientation::Horizontal,
+                                       Alignment::Middle, 15, 15));
 
-
+    // Stream button
     _btnStream = _views->add<Button>("");
     _btnStream->setIcon(ENTYPO_ICON_CONTROLLER_PLAY);
-    // _btnStream->setBackgroundColor(Color(26, 183, 234, 10));
     _btnStream->setFlags(Button::ToggleButton);
     _btnStream->setTooltip("Start streaming RGB and depth from a connected RealSense sensor 🎥");
     _btnStream->setChangeCallback([&](bool state) { onToggleStream(state); });
 
+    //Clipping button
+    _btnClipping = _views->add<Button>("");
+    _btnClipping->setIcon(ENTYPO_ICON_SCISSORS);
+    _btnClipping->setFlags(Button::ToggleButton);
+    _btnClipping->setTooltip("Start streaming RGB and depth from a connected RealSense sensor 🎥");
+    _btnClipping->setChangeCallback([&](bool state) { onToggleClipping(state); });
 
 
     //Placeholders for the window elements
     _streamWindow = nullptr;
-
-    // _edit = new Window(this, "Edit");
-    // _edit->setPosition(Vector2i(15, 150));
-    // _edit->setLayout(new GroupLayout());
-    //
-    // _depthCleaning = new CheckBox(_edit, "Depth Filtering");
-    // _depthCleaning->setCallback([&](bool state){
-    //     isDepthCleaning = state;
-    // });
-    //
-    // _depthInpainting = new CheckBox(_edit, "Depth Inpainting");
-    // _depthInpainting->setCallback([&](bool state){
-    //     std::cout << state << std::endl;
-    // });
 
     performLayout();
 
@@ -58,6 +51,51 @@ MainWindow::MainWindow(const Vector2i & size, const string & caption)
       std::cout << "[Vimeo - Depth Viewer] Found " << ctx.query_devices().size() << " RealSense sensors connected." << std::endl;
     }
 
+}
+
+void MainWindow::onToggleSettings(bool on){
+
+}
+
+void MainWindow::onToggleClipping(bool on)
+{
+  if(on){
+    clippingPanel = new Window(this, "Clipping");
+    clippingPanel->setPosition(Vector2i(350, 90));
+    clippingPanel->setLayout(new GroupLayout());
+
+    // Disable/enable depth clipping
+    CheckBox *cb = new CheckBox(clippingPanel, "Depth Clipping",
+            [this](bool state) { isClipping = state; }
+    );
+
+
+    Widget *alignmentWidget = new Widget(clippingPanel);
+    alignmentWidget->setLayout(new BoxLayout(Orientation::Horizontal,
+                                           Alignment::Middle, 15, 15));
+    // Clipping slider
+    Slider *slider = new Slider(alignmentWidget);
+    slider->setValue(0.5f);
+    slider->setFixedWidth(150);
+
+    // Clipping value text label
+    TextBox *textBox = new TextBox(alignmentWidget);
+    textBox->setFixedSize(Vector2i(60, 25));
+    textBox->setValue("0.5");
+    slider->setCallback([this](float value) {
+        depth_clipping_distance = value * 15.0f;
+        // textBox->setValue(std::to_string((float) (value * 15.0f)));
+    });
+    textBox->setFixedSize(Vector2i(60,25));
+    textBox->setFontSize(20);
+    textBox->setAlignment(TextBox::Alignment::Right);
+
+  } else {
+    clippingPanel->dispose();
+  }
+
+  //Perform new GUI layout
+  performLayout();
 }
 
 void MainWindow::onToggleStream(bool on)
@@ -126,10 +164,16 @@ void MainWindow::draw(NVGcontext * ctx)
         rs2::video_frame colorFrame = frames.first(align_to);
         rs2::depth_frame depthFrame = frames.get_depth_frame();
 
+        if(isClipping){
+          remove_background(colorFrame, depthFrame, _depthScale, depth_clipping_distance);
+        }
+
         if (_streamWindow != nullptr){
 
           //Create a colorizer which maps depth to 8bit color space
           rs2::colorizer colormap;
+
+          //Set the current frame to the frame buffer
           _streamWindow->setVideoFrame(colorFrame, colormap(depthFrame));
 
         }
@@ -271,4 +315,35 @@ float MainWindow::get_depth_scale(rs2::device dev)
         }
     }
     throw std::runtime_error("Device does not have a depth sensor");
+}
+
+void MainWindow::remove_background(rs2::video_frame& other_frame, const rs2::depth_frame& depth_frame, float depth_scale, float clipping_dist)
+{
+    const uint16_t* p_depth_frame = reinterpret_cast<const uint16_t*>(depth_frame.get_data());
+    uint8_t* p_other_frame = reinterpret_cast<uint8_t*>(const_cast<void*>(other_frame.get_data()));
+
+    int width = other_frame.get_width();
+    int height = other_frame.get_height();
+    int other_bpp = other_frame.get_bytes_per_pixel();
+
+    #pragma omp parallel for schedule(dynamic) //Using OpenMP to try to parallelise the loop
+    for (int y = 0; y < height; y++)
+    {
+        auto depth_pixel_index = y * width;
+        for (int x = 0; x < width; x++, ++depth_pixel_index)
+        {
+            // Get the depth value of the current pixel
+            auto pixels_distance = depth_scale * p_depth_frame[depth_pixel_index];
+
+            // Check if the depth value is invalid (<=0) or greater than the threashold
+            if (pixels_distance <= 0.f || pixels_distance > clipping_dist)
+            {
+                // Calculate the offset in other frame's buffer to current pixel
+                auto offset = depth_pixel_index * other_bpp;
+
+                // Set pixel to "background" color (0x999999)
+                std::memset(&p_other_frame[offset], 0x00, other_bpp);
+            }
+        }
+    }
 }
