@@ -24,7 +24,7 @@ int main(int argc, char * argv[]) try {
       nanogui::init();
       {
           //GUI view
-          nanogui::ref<MainWindow> guiMain = new MainWindow(Eigen::Vector2i(700, 700), "Vimeo - Depth Viewer");
+          nanogui::ref<MainWindow> guiMain = new MainWindow(Eigen::Vector2i(700, 1100), "Vimeo - Depth Viewer");
           guiMain->drawAll();
           guiMain->setVisible(true);
 

@@ -35,6 +35,7 @@
 
 //App components
 #include "VideoWindow.h"
+#include "Renderer.h"
 
 using namespace std;
 using namespace Eigen;
@@ -50,7 +51,7 @@ public:
     bool keyboardEvent(int key, int scancode, int action, int modifiers) override;
     bool resizeEvent(const Eigen::Vector2i & size) override;
     void draw(NVGcontext *ctx) override;
-
+    Renderer *monitorView;
 protected:
     bool tryStartVideo();
     void stopVideo();
@@ -61,6 +62,14 @@ protected:
     void remove_background(rs2::video_frame& other_frame, const rs2::depth_frame& depth_frame, float depth_scale, float clipping_dist);
 
 private:
+
+    // Initialize a vector that holds filters and their options
+    rs2::decimation_filter dec_filter;  // Decimation - reduces depth frame density
+    rs2::spatial_filter spat_filter;    // Spatial    - edge-preserving spatial smoothing
+    rs2::temporal_filter temp_filter;   // Temporal   - reduces temporal noise
+    rs2::disparity_transform disparity_to_depth;
+    rs2::disparity_transform depth_to_disparity;
+
     float depth_clipping_distance;
 
     bool isClipping;

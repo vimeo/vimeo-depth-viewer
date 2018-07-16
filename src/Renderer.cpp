@@ -43,6 +43,59 @@ Renderer::Renderer() : _glslVertex{ R"(
         fragColor = vec4(topBottom, 1.0);
     })" } {
     setupWindow();
+
+    _shader.init("VideoViewShader", _glslVertex, _glslFragment);
+
+    // positions
+    MatrixXf positions(2, 4);
+    positions.col(0) << -1,  1; // top left
+    positions.col(1) <<  1,  1; // top right
+    positions.col(2) << -1, -1; // bottom left
+    positions.col(3) <<  1, -1; // bottom right
+
+    // texture coords
+    MatrixXf coords(2, 4);
+    coords.col(0) << 0, 0; // top left
+    coords.col(1) << 1, 0; // top right
+    coords.col(2) << 0, 1; // bottom left
+    coords.col(3) << 1, 1; // bottom right
+
+    // indices
+    MatrixXu indices(3, 2);
+    indices.col(0) << 0, 1, 2;  // first triangle
+    indices.col(1) << 2, 3, 1;  // first triangle
+
+    // claim and bind to buffers
+    _shader.bind();
+    _shader.uploadAttrib("position", positions);
+    _shader.uploadAttrib("coord", coords);
+    _shader.uploadIndices(indices);
+
+    // Create the color texture
+
+    glGenTextures(2, textures);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textures[0]); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    float borderColor[] = { 0.0f, 0.0f, 1.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    _shader.setUniform("colorFrame", 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, textures[1]); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    _shader.setUniform("depthFrame", 1);
 }
 
 void Renderer::begin(){
@@ -60,6 +113,41 @@ void Renderer::end(){
     //Post drawing processing(swap front and back buffers)
     glfwSwapBuffers(window);
     glfwPollEvents();
+}
+
+void Renderer::setFrame(rs2::frame _color, rs2::frame _depth)
+{
+    _colorQueue.enqueue(std::move(_color));
+    _depthQueue.enqueue(std::move(_depth));
+}
+
+void Renderer::draw(){
+  rs2::video_frame color_frame = _colorQueue.wait_for_frame().as<rs2::video_frame>();
+  rs2::video_frame depth_frame = _depthQueue.wait_for_frame().as<rs2::video_frame>();
+  int frameWidth = color_frame.get_width();
+  int frameHeight = color_frame.get_height();
+  int depthFrameWidth = depth_frame.get_width();
+  int depthFrameHeight = depth_frame.get_height();
+
+  // std::cout << "Color frame height is: " << frameHeight << " | " << "Color frame width is: " << frameWidth << std::endl;
+  // std::cout << "Depth frame height is: " << depthFrameHeight << " | " << "Depth frame width is: " << depthFrameWidth << std::endl;
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, textures[0]);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frameWidth, frameHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, color_frame.get_data());
+  glGenerateMipmap(GL_TEXTURE_2D);
+
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, textures[1]);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, depthFrameWidth, depthFrameHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, depth_frame.get_data());
+  glGenerateMipmap(GL_TEXTURE_2D);
+
+  _shader.bind();
+
+  glEnable(GL_DEPTH_TEST);
+  // Draw 2 triangles starting at index 0
+  _shader.drawIndexed(GL_TRIANGLES, 0, 2);
+  glDisable(GL_DEPTH_TEST);
 }
 
 void Renderer::dispose() {
@@ -93,10 +181,10 @@ void Renderer::setupWindow() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
-    width = 1100;
-    height = 1000;
+    width = 640;
+    height = 960;
     // Create a windowed mode window and its OpenGL context
-    window = glfwCreateWindow(width, height, "Volume.GL", NULL, NULL);
+    window = glfwCreateWindow(width, height, "Vimeo - Monitor", NULL, NULL);
     if (!window)
     {
         glfwTerminate();

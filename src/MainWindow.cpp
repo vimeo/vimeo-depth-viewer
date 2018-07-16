@@ -1,12 +1,17 @@
 #include "MainWindow.h"
 
+
+
+
 MainWindow::MainWindow(const Vector2i & size, const string & caption)
         : Screen(size, caption)
         , _isVideoStarted{ false }
         , _colorRatio{ 16.0f / 9.0f }
         , _depthRatio{ 16.0f / 9.0f }
-        ,isClipping{ false }
-        ,depth_clipping_distance{ 1.0f }{
+        , isClipping{ false }
+        , depth_clipping_distance{ 1.0f }
+        , disparity_to_depth( false )
+        , depth_to_disparity( true ){
 
     std::cout.setf(std::ios::fixed);
 
@@ -18,7 +23,7 @@ MainWindow::MainWindow(const Vector2i & size, const string & caption)
     _btnLogo->setIcon(ENTYPO_ICON_VIMEO);
     _btnLogo->setTextColor(Color(26, 183, 234, 255));
     _btnLogo->setChangeCallback([&](bool state) {
-      system("open https://vimeo.com");
+      system("open https://vimeo.com/live");
     });
 
     // Create a new window to hold open/close stream buttons
@@ -65,7 +70,6 @@ void MainWindow::onToggleClipping(bool on)
             [this](bool state) { isClipping = state; }
     );
 
-
     Widget *alignmentWidget = new Widget(clippingPanel);
     alignmentWidget->setLayout(new BoxLayout(Orientation::Horizontal,
                                            Alignment::Middle, 15, 15));
@@ -109,7 +113,7 @@ void MainWindow::onToggleStream(bool on)
         _streamWindow = new VideoWindow(this,"Stream");
         _streamWindow->setPosition(Vector2i(15, 90));
         _btnStream->setIcon(ENTYPO_ICON_CONTROLLER_STOP);
-        _streamWindow->setSize(Vector2i(640/2, 960/2));
+        _streamWindow->setSize(Vector2i(640, 960));
         performLayout();
         resizeEvent(this->size());
     }
@@ -160,6 +164,23 @@ void MainWindow::draw(NVGcontext * ctx)
         rs2::video_frame colorFrame = frames.first(align_to);
         rs2::depth_frame depthFrame = frames.get_depth_frame();
 
+        rs2::frame filtered = depthFrame; // Does not copy the frame, only adds a reference
+
+        /* Apply filters.
+        The implemented flow of the filters pipeline is in the following order:
+        1. apply decimation filter
+        2. transform the scence into disparity domain
+        3. apply spatial filter
+        4. apply temporal filter
+        5. revert the results back (if step Disparity filter was applied
+        to depth domain (each post processing block is optional and can be applied independantly).
+        */
+        filtered = dec_filter.process(filtered);
+        filtered = depth_to_disparity.process(filtered);
+        filtered = spat_filter.process(filtered);
+        filtered = temp_filter.process(filtered);
+        filtered = disparity_to_depth.process(filtered);
+
         if(isClipping){
           remove_background(colorFrame, depthFrame, _depthScale, depth_clipping_distance);
         }
@@ -170,8 +191,7 @@ void MainWindow::draw(NVGcontext * ctx)
           rs2::colorizer colormap;
 
           //Set the current frame to the frame buffer
-          _streamWindow->setVideoFrame(colorFrame, colormap(depthFrame));
-
+          _streamWindow->setVideoFrame(colorFrame, colormap(filtered));
         }
 
 
