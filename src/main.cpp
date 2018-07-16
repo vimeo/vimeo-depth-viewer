@@ -18,8 +18,16 @@
 #include <algorithm>
 #include <cstring>
 
-int main(int argc, char * argv[]) try {
+std::atomic_bool stopped(false);
 
+int main(int argc, char * argv[]) try {
+      //Initialize performance thread
+      std::thread processing_thread([&]() {
+        while (!stopped) //While application is running
+        {
+
+        }
+      });
       // initialize GUI
       nanogui::init();
       {
@@ -37,6 +45,8 @@ int main(int argc, char * argv[]) try {
       }
 
       nanogui::shutdown();
+      stopped = true;
+      processing_thread.join();
       std::cout << "[Vimeo - Depth Viewer] Goodbye 👋🏻" << std::endl;
 
     return EXIT_SUCCESS;
