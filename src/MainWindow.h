@@ -35,6 +35,7 @@
 
 //App components
 #include "VideoWindow.h"
+#include "MonitorWindow.h"
 
 using namespace std;
 using namespace Eigen;
@@ -43,7 +44,7 @@ using namespace nanogui;
 class MainWindow : public nanogui::Screen
 {
 public:
-    MainWindow(const Eigen::Vector2i & size, const std::string & caption);
+    MainWindow(const Eigen::Vector2i & size, const std::string & caption, nanogui::ref<MonitorWindow> monitorWindow);
     void onToggleStream(bool on);
     void onToggleClipping(bool on);
     void onToggleSettings(bool on);
@@ -60,6 +61,9 @@ protected:
     void remove_background(rs2::video_frame& other_frame, const rs2::depth_frame& depth_frame, float depth_scale, float clipping_dist);
 
 private:
+
+    //Reference to the monitor window
+    nanogui::ref<MonitorWindow> monitor;
 
     // Initialize a vector that holds filters and their options
     rs2::decimation_filter dec_filter;  // Decimation - reduces depth frame density
@@ -81,6 +85,7 @@ private:
     nanogui::Button *_btnLogo;
     nanogui::Button *_btnStream;
     nanogui::Button *_btnClipping;
+    nanogui::Button *_btnMonitor;
 
     VideoWindow *_streamWindow;
 

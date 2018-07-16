@@ -33,9 +33,13 @@ int main(int argc, char * argv[]) try {
       // initialize GUI
       nanogui::init();
       {
-          //GUI view
-          nanogui::ref<MainWindow> guiMain = new MainWindow(Eigen::Vector2i(700, 640), "Vimeo - Depth Viewer");
+
+          //Monitor Window
           nanogui::ref<MonitorWindow> monitor = new MonitorWindow(Eigen::Vector2i(640, 960), "Vimeo - Monitor");
+
+          //GUI view
+          nanogui::ref<MainWindow> guiMain = new MainWindow(Eigen::Vector2i(700, 640), "Vimeo - Depth Viewer", monitor);
+
 
           guiMain->drawAll();
           guiMain->setVisible(true);

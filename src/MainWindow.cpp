@@ -3,7 +3,7 @@
 
 
 
-MainWindow::MainWindow(const Vector2i & size, const string & caption)
+MainWindow::MainWindow(const Vector2i & size, const string & caption, nanogui::ref<MonitorWindow> monitorWindow)
         : Screen(size, caption)
         , _isVideoStarted{ false }
         , _colorRatio{ 16.0f / 9.0f }
@@ -14,6 +14,8 @@ MainWindow::MainWindow(const Vector2i & size, const string & caption)
         , depth_to_disparity( true ){
 
     std::cout.setf(std::ios::fixed);
+
+    monitor = monitorWindow;
 
     _logo = new Window(this, "");
     _logo->setPosition(Vector2i(15, 15));
@@ -39,12 +41,30 @@ MainWindow::MainWindow(const Vector2i & size, const string & caption)
     _btnStream->setTooltip("Start streaming RGB and depth from a connected RealSense sensor 🎥");
     _btnStream->setChangeCallback([&](bool state) { onToggleStream(state); });
 
-    //Clipping button
+    // Clipping button
     _btnClipping = _views->add<Button>("");
     _btnClipping->setIcon(ENTYPO_ICON_SCISSORS);
     _btnClipping->setFlags(Button::ToggleButton);
     _btnClipping->setTooltip("Open depth clipping widget");
     _btnClipping->setChangeCallback([&](bool state) { onToggleClipping(state); });
+
+    // Monitor button
+    _btnMonitor = _views->add<Button>("");
+    _btnMonitor->setIcon(ENTYPO_ICON_LAPTOP);
+    _btnMonitor->setFlags(Button::ToggleButton);
+    _btnMonitor->setTooltip("Open monitor window");
+    _btnMonitor->setChangeCallback([&](bool state) {
+      if(state){
+        if(_streamWindow == nullptr){
+          new MessageDialog(this, MessageDialog::Type::Warning, "Warning", "There is currently no open stream, try opening the stream first");
+          _btnMonitor->setPushed(false);
+        } else {
+          monitor->setVisible(true);
+        }
+      } else {
+        monitor->setVisible(false);
+      }
+    });
 
     //Placeholders for the window elements
     _streamWindow = nullptr;
@@ -134,7 +154,10 @@ bool MainWindow::keyboardEvent(int key, int scancode, int action, int modifiers)
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     {
+        //Get rid of both windows
         setVisible(false);
+        monitor->setVisible(false);
+
         return true;
     }
     return false;
@@ -192,6 +215,7 @@ void MainWindow::draw(NVGcontext * ctx)
 
           //Set the current frame to the frame buffer
           _streamWindow->setVideoFrame(colorFrame, colormap(filtered));
+          monitor->setVideoFrame(colorFrame, colormap(filtered));
         }
 
 
@@ -249,6 +273,8 @@ void MainWindow::stopVideo()
     try
     {
         _isVideoStarted = false;
+        monitor->setVisible(false);
+        _btnMonitor->setPushed(false);
         _pipe.stop();
     }
     catch (const rs2::error & e)
