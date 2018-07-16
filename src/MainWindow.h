@@ -35,7 +35,6 @@
 
 //App components
 #include "VideoWindow.h"
-#include "Renderer.h"
 
 using namespace std;
 using namespace Eigen;
@@ -51,7 +50,6 @@ public:
     bool keyboardEvent(int key, int scancode, int action, int modifiers) override;
     bool resizeEvent(const Eigen::Vector2i & size) override;
     void draw(NVGcontext *ctx) override;
-    Renderer *monitorView;
 protected:
     bool tryStartVideo();
     void stopVideo();
