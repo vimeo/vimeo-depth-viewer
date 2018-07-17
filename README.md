@@ -1,7 +1,7 @@
 # Depth Viewer
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)  
-![Interface Cover Image](https://github.com/vimeo/depth-viewer/blob/master/docs/cover.png)  
 An OpenGL application for viewing depth and color video streams from Intel RealSense cameras (D415/D435). The intention behind this application is to allow easy live streaming of color-depth information using [Vimeo Live](https://vimeo.com/live).
+![Interface Cover Image](https://github.com/vimeo/depth-viewer/blob/master/docs/cover.png)  
 1. [Quick-start](#quick-start)
 1. [Features](#features)
 1. [Development](#development)
