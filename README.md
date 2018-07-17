@@ -1,3 +1,3 @@
 # Vimeo - Depth Viewer
-A color-depth viewer as a part of an on-going research into volumetric video in Vimeo.
-![Screenshot](https://github.com/vimeo/depth-viewer/blob/master/docs/image.png)
+An OpenGL application for viewing depth and color video streams from Intel RealSense cameras.
+![Interface Cover Image](https://github.com/vimeo/depth-viewer/blob/master/docs/cover.png)
