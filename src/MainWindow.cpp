@@ -11,7 +11,10 @@ MainWindow::MainWindow(const Vector2i & size, const string & caption, nanogui::r
         , isClipping{ false }
         , depth_clipping_distance{ 1.0f }
         , disparity_to_depth( false )
-        , depth_to_disparity( true ){
+        , depth_to_disparity( true )
+        , isSpatialFiltering{ true }
+        , isTemporalFiltering{ true }
+        , isDecimationFiltering{ true }{
 
     std::cout.setf(std::ios::fixed);
 
@@ -66,6 +69,13 @@ MainWindow::MainWindow(const Vector2i & size, const string & caption, nanogui::r
       }
     });
 
+    // Filter button
+    _btnFilter = _views->add<Button>("");
+    _btnFilter->setIcon(ENTYPO_ICON_IMAGE);
+    _btnFilter->setFlags(Button::ToggleButton);
+    _btnFilter->setTooltip("Open monitor window");
+    _btnFilter->setChangeCallback([&](bool state){ onToggleFiltering(state); });
+
     //Placeholders for the window elements
     _streamWindow = nullptr;
 
@@ -75,6 +85,35 @@ MainWindow::MainWindow(const Vector2i & size, const string & caption, nanogui::r
     if(ctx.query_devices().size() > 0){
       std::cout << "[Vimeo - Depth Viewer] Found " << ctx.query_devices().size() << " RealSense sensors connected." << std::endl;
     }
+
+}
+
+void MainWindow::onToggleFiltering(bool on)
+{
+  if(on){
+    filterPanel = new Window(this, "Filtering");
+    filterPanel->setPosition(Vector2i(380, 238));
+    filterPanel->setLayout(new GroupLayout());
+
+    CheckBox *cbDecimate = new CheckBox(filterPanel, "Decimation Filtering",
+            [this](bool state) { isDecimationFiltering = state; }
+    );
+    cbDecimate->setChecked(true);
+    CheckBox *cbSpatial = new CheckBox(filterPanel, "Spatial Filtering",
+            [this](bool state) { isSpatialFiltering = state; }
+    );
+    cbSpatial->setChecked(true);
+    CheckBox *cbTemporal = new CheckBox(filterPanel, "Temporal Filtering",
+            [this](bool state) { isTemporalFiltering = state; }
+    );
+    cbTemporal->setChecked(true);
+
+  } else {
+
+  }
+
+  //Perform new GUI layout
+  performLayout();
 
 }
 
@@ -198,10 +237,10 @@ void MainWindow::draw(NVGcontext * ctx)
         5. revert the results back (if step Disparity filter was applied
         to depth domain (each post processing block is optional and can be applied independantly).
         */
-        filtered = dec_filter.process(filtered);
+        if(isDecimationFiltering) filtered = dec_filter.process(filtered);
         filtered = depth_to_disparity.process(filtered);
-        filtered = spat_filter.process(filtered);
-        filtered = temp_filter.process(filtered);
+        if(isSpatialFiltering) filtered = spat_filter.process(filtered);
+        if(isTemporalFiltering) filtered = temp_filter.process(filtered);
         filtered = disparity_to_depth.process(filtered);
 
         if(isClipping){

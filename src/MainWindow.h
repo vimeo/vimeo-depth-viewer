@@ -48,9 +48,11 @@ public:
     void onToggleStream(bool on);
     void onToggleClipping(bool on);
     void onToggleSettings(bool on);
+    void onToggleFiltering(bool on);
     bool keyboardEvent(int key, int scancode, int action, int modifiers) override;
     bool resizeEvent(const Eigen::Vector2i & size) override;
     void draw(NVGcontext *ctx) override;
+
 protected:
     bool tryStartVideo();
     void stopVideo();
@@ -75,9 +77,13 @@ private:
     float depth_clipping_distance;
 
     bool isClipping;
+    bool isSpatialFiltering;
+    bool isTemporalFiltering;
+    bool isDecimationFiltering;
 
     //Window objects
     nanogui::Window *clippingPanel;
+    nanogui::Window *filterPanel;
     nanogui::Window *_logo;
     nanogui::Window *_views;
     nanogui::Window *_edit;
@@ -86,6 +92,7 @@ private:
     nanogui::Button *_btnStream;
     nanogui::Button *_btnClipping;
     nanogui::Button *_btnMonitor;
+    nanogui::Button *_btnFilter;
 
     VideoWindow *_streamWindow;
 
