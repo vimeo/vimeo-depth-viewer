@@ -98,15 +98,15 @@ void MainWindow::onToggleFiltering(bool on)
     CheckBox *cbDecimate = new CheckBox(filterPanel, "Decimation Filtering",
             [this](bool state) { isDecimationFiltering = state; }
     );
-    cbDecimate->setChecked(true);
+    cbDecimate->setChecked(isDecimationFiltering);
     CheckBox *cbSpatial = new CheckBox(filterPanel, "Spatial Filtering",
             [this](bool state) { isSpatialFiltering = state; }
     );
-    cbSpatial->setChecked(true);
+    cbSpatial->setChecked(isSpatialFiltering);
     CheckBox *cbTemporal = new CheckBox(filterPanel, "Temporal Filtering",
             [this](bool state) { isTemporalFiltering = state; }
     );
-    cbTemporal->setChecked(true);
+    cbTemporal->setChecked(isTemporalFiltering);
 
   } else {
 

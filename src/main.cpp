@@ -45,7 +45,6 @@ int main(int argc, char * argv[]) try {
           guiMain->setVisible(true);
 
           monitor->drawContents();
-          // monitor->setVisible(true);
 
           /*
           * Print instructions into the console
