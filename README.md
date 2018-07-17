@@ -22,6 +22,7 @@ git clone https://github.com/vimeo/depth-viewer.git --recursive
 3. `cd` into the folder and create a `build` folder (e.g `cd depth-viewer && mkdir build`)
 4. Run `CMake` by calling `cmake ../` from the build folder
 5. Run `make` to build an executable
+6. Run the executable by running `./VimeoDepthViewer`
 
 > Tested on macOS v10.13.4 & CMake v3.11.4
 
