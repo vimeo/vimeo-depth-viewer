@@ -4,15 +4,15 @@ An OpenGL application for viewing depth and color video streams from Intel RealS
 ![Interface Cover Image](https://github.com/vimeo/depth-viewer/blob/master/docs/cover.png)  
 1. [Quick-start](#quick-start)
 1. [Features](#features)
-1. [Development](#development)
-1. Dependencies
-1. License
+1. [Build from source](#build-from-source)
+1. [Dependencies](#dependencies)
+1. [License](#license)
 
 ### Quick-start
 
 ### Features
 
-### Development
+### Build from source
 All 3rd party libraries used are included as `git submodules` to ease the setup and development process, it should be easy to clone using the `--recursive` flag and build everything from source.
 1. Make sure you have `CMake` installed
 2. Clone the repository including all the submodules:
