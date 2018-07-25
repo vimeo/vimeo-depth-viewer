@@ -9,6 +9,7 @@ An OpenGL application for viewing depth and color video streams from Intel RealS
 1. [License](#license)
 
 ### Quick-start
+To quickly get started, download a pre-built release of the depth-viewer [from here](https://github.com/vimeo/depth-viewer/releases) or [build it from source](#build-from-source). Once you have a binary launch it by double clicking it or calling `./VimeoDepthViewer` from the folder and you should be good to go.
 
 ### Features
 - [x] An easy to use interface based on [nanogui](https://github.com/wjakob/nanogui).
