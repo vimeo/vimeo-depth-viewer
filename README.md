@@ -11,10 +11,11 @@ An OpenGL application for viewing depth and color video streams from Intel RealS
 ### Quick-start
 
 ### Features
--[x] An easy to use interface based on [nanogui](https://github.com/wjakob/nanogui).
--[x] Depth clipping for easy background removal.
--[x] Seprate stream view and monitor window for easily live streaming a full window
--[x] Depth filtering (decimation, spatial and temporal filters)
+- [x] An easy to use interface based on [nanogui](https://github.com/wjakob/nanogui).
+- [x] Depth clipping for easy background removal.
+- [x] Seprate stream view and monitor window for easily live streaming a full window
+- [x] Depth filtering (decimation, spatial and temporal filters)
+- [x] Fully `git sub-moduled` and uses `CMake` for easy set up
 
 ### Build from source
 All 3rd party libraries used are included as `git submodules` to ease the setup and development process, it should be easy to clone using the `--recursive` flag and build everything from source.
