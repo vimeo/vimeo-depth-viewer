@@ -16,7 +16,7 @@ To quickly get started, download a pre-built release of the depth-viewer [from h
 - [x] Depth clipping for easy background removal.
 - [x] Seprate stream view and monitor window for easily live streaming a full window
 - [x] Depth filtering (decimation, spatial and temporal filters)
-- [x] Fully `git sub-moduled` and uses `CMake` for easy set up
+- [x] Fully `git submodules` and `CMake` for easy set up
 
 ### Build from source
 All 3rd party libraries used are included as `git submodules` to ease the setup and development process, it should be easy to clone using the `--recursive` flag and build everything from source.
@@ -39,7 +39,7 @@ git clone https://github.com/vimeo/depth-viewer.git --recursive
 1. [librealsense2](https://github.com/IntelRealSense/librealsense)
 
 ### License
-Some license
+License file could be [found here](https://github.com/vimeo/depth-viewer)
 
 ### Questions, help, and support
 For questions and support, [ask on StackOverflow](https://stackoverflow.com/questions/ask/?tags=vimeo). If you found a bug, please file a [GitHub issue](https://github.com/vimeo/depth-viewer/issues).
