@@ -1,7 +1,16 @@
-# Depth Viewer
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)  
-An OpenGL application for viewing depth and color video streams from Intel RealSense cameras (D415/D435). The intention behind this application is to allow easy live streaming of color-depth information using [Vimeo Live](https://vimeo.com/live).
-![Interface Cover Image](https://github.com/vimeo/depth-viewer/blob/master/docs/cover.png)  
+<h1 align="center">Vimeo Depth Viewer</h1>
+
+
+<p align="center">
+<img src="https://github.com/vimeo/depth-viewer/blob/master/docs/cover.png" alt="A GIF of a volumetric WebVR demo" height="400" />
+</p>
+
+<h4 align="center">An OpenGL application for viewing depth and color video streams from Intel RealSense cameras (D415/D435). The intention behind this application is to allow easy live streaming of color-depth information using <a href="https://vimeo.com/live">Vimeo Live</a>.</h4>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square" alt="PRs Welcome">
+</p>
+ 
 1. [Quick-start](#quick-start)
 1. [Features](#features)
 1. [Build from source](#build-from-source)
@@ -20,7 +29,10 @@ To quickly get started, download a pre-built release of the depth-viewer [from h
 
 ### Build from source
 All 3rd party libraries used are included as `git submodules` to ease the setup and development process, it should be easy to clone using the `--recursive` flag and build everything from source.
-1. Make sure you have `CMake` installed
+1. Make sure you have `CMake` installed, for macOS, install [Homebrew](https://brew.sh) and run
+```sh
+brew install cmake
+```
 2. Clone the repository including all the submodules:
 ```
 git clone https://github.com/vimeo/depth-viewer.git --recursive
