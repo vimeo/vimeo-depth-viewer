@@ -2,7 +2,7 @@
 
 
 <p align="center">
-<img src="https://github.com/vimeo/depth-viewer/blob/master/docs/cover.png" alt="A GIF of a volumetric WebVR demo" height="400" />
+<img src="https://github.com/vimeo/depth-viewer/blob/master/docs/cover.png" alt="A GIF of the depth viewer application" height="400" />
 </p>
 
 <h4 align="center">An OpenGL application for viewing depth and color video streams from Intel RealSense cameras (D415/D435). The intention behind this application is to allow easy live streaming of color-depth information using <a href="https://vimeo.com/live">Vimeo Live</a>.</h4>
@@ -18,7 +18,7 @@
 1. [License](#license)
 
 # Quick-start
-To quickly get started, download a pre-built release of the depth-viewer [from here](https://github.com/vimeo/depth-viewer/releases) or [build it from source](#build-from-source). Once you have a binary launch it by double clicking it or calling `./VimeoDepthViewer` from the folder and you should be good to go.
+Make you get either the Intel [RealSense D415/D435](https://click.intel.com/intelr-realsensetm-depth-camera-d415.html). We peronsally prefered working with the D415, as it proved more reliable, but both work with this software. To quickly get started, download a pre-built release of the depth-viewer [from here](https://github.com/vimeo/depth-viewer/releases) or [build it from source](#build-from-source). Once you have a binary launch it by double clicking it or calling `./VimeoDepthViewer` from the folder and you should be good to go.
 
 # Features
 - [x] An easy to use interface based on [nanogui](https://github.com/wjakob/nanogui).
