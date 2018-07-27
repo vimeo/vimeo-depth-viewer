@@ -51,7 +51,7 @@ git clone https://github.com/vimeo/depth-viewer.git --recursive
 1. [librealsense2](https://github.com/IntelRealSense/librealsense)
 
 # License
-License file could be [found here](https://github.com/vimeo/vimeo-depth-viewer)
+License file could be [found here](https://github.com/vimeo/vimeo-depth-viewer/blob/master/LICENSE)
 
 # Questions, help, and support
 For questions and support, [ask on StackOverflow](https://stackoverflow.com/questions/ask/?tags=vimeo). If you found a bug, please file a [GitHub issue](https://github.com/vimeo/vimeo-depth-viewer/issues).
