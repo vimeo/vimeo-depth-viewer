@@ -59,4 +59,4 @@ For questions and support, [ask on StackOverflow](https://stackoverflow.com/ques
 Make pull requests, file bug reports, and make feature requests via a [GitHub issue](https://github.com/vimeo/vimeo-depth-viewer/issues).
 
 # Let's collaborate
-Working on a cool video project? [Let's talk!](mailto:labs@vimeo.com)
+Working on a cool video project? Let's talk - labs at vimeo dot com
