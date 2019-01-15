@@ -5,11 +5,13 @@
 <img src="https://github.com/vimeo/depth-viewer/blob/master/docs/cover.png" alt="A GIF of the depth viewer application" height="400" />
 </p>
 
-<h4 align="center">An OpenGL application for viewing depth and color video streams from Intel RealSense cameras (D415/D435).</h4><p align="center">This repository consists of tools and demos presented at the Volumetric Filmmaking meetup at NYC.<br> Watch the <a href="https://vimeo.com/280815263#t=7836s">live-stream from the meetup</a> or checkout the <a href="https://github.com/vimeo/vimeo-depth-player/">WebVR examples</a>.</p>
-
 <p align="center">
   <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square" alt="PRs Welcome">
 </p>
+
+<h4 align="center">An OpenGL application for viewing depth and color video streams from Intel RealSense cameras (D415/D435).</h4><p align="center">This repository consists of tools and demos presented at the Volumetric Filmmaking meetup at NYC.<br> Watch the <a href="https://vimeo.com/280815263#t=7836s">live-stream from the meetup</a> or checkout the <a href="https://github.com/vimeo/vimeo-depth-player/">WebVR examples</a>.</p>
+
+<p align="center">Looking for a simpler solution that doesn't require code? <a href="https://docs.depthkit.tv/docs/the-depthkit-workflow">head over to Depthkit</a> to learn more, our WebVR examples fully support it</p>
  
 1. [Quick-start](#quick-start)
 1. [Features](#features)
