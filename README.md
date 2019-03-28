@@ -59,6 +59,3 @@ License file could be [found here](https://github.com/vimeo/vimeo-depth-viewer/b
 For questions and support, [ask on StackOverflow](https://stackoverflow.com/questions/ask/?tags=vimeo). If you found a bug, please file a [GitHub issue](https://github.com/vimeo/vimeo-depth-viewer/issues).
 
 Make pull requests, file bug reports, and make feature requests via a [GitHub issue](https://github.com/vimeo/vimeo-depth-viewer/issues).
-
-# Let's collaborate
-Working on a cool video project? Let's talk - labs at vimeo dot com
