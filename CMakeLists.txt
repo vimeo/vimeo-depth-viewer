@@ -13,9 +13,6 @@ else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
-# Locate the OpenCV lib
-find_package( OpenCV REQUIRED )
-
 # RealSense lib
 set(DHWM_OVER_XU          OFF)
 set(BUILD_EXAMPLES     OFF)
@@ -58,4 +55,4 @@ file(GLOB SOURCES
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Link the OpenCV lib
-target_link_libraries( VimeoDepthViewer nanogui ${NANOGUI_EXTRA_LIBS} ${OpenCV_LIBS} realsense2 )
+target_link_libraries( VimeoDepthViewer nanogui ${NANOGUI_EXTRA_LIBS} realsense2 )
